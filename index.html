@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>לוח שנה - יבנאל</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  margin: 0;
+  padding: 0;
+  background: #0f1115;
+  color: #f2f8ff;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  min-height: 100vh;
+}
+.app {
+  width: 100%;
+  max-width: 1150px;
+  margin: 18px;
+  background: #171a1f;
+  border-radius: 18px;
+  box-shadow: 0 12px 34px rgba(0,0,0,0.45);
+  display: grid;
+  grid-template-columns: 2fr 1.15fr;
+  overflow: hidden;
+}
+
+/* מסכים עד 900px – טלפון/טאבלט */
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+    margin: 8px;
+    border-radius: 10px;
+  }
+  .header {
+    padding: 12px;
+  }
+  .calendar-grid th {
+    padding: 6px 0;
+  }
+  .calendar-grid td {
+    height: 82px;
+    padding: 4px;
+  }
+  .greg-day { font-size: 0.95rem; }
+  .heb-day { font-size: 0.7rem; }
+  .tags { margin-top: 3px; gap: 2px; }
+  .tag { font-size: 0.6rem; padding: 1px 4px; }
+  .sidebar {
+    border-left: none;
+    border-top: 1px solid #242830;
+  }
+}
+
+/* מסכים קטנים יותר – טלפונים צרים */
+@media (max-width: 600px) {
+  .app {
+    margin: 0;
+    border-radius: 0;
+    max-width: 100%;
+  }
+  .header {
+    padding: 10px 12px;
+  }
+  .header-main h1 {
+    font-size: 1.1rem;
+  }
+  .month-controls {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .month-controls button {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+  }
+  .month-label {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    min-width: 90px;
+  }
+  .main {
+    padding: 8px 4px;
+  }
+  .calendar-grid th {
+    padding: 5px 0;
+    font-size: 0.7rem;
+  }
+  .calendar-grid td {
+    padding: 4px 3px;
+    height: 78px;
+  }
+  .heb-day { font-size: 0.7rem; }
+  .tags { margin-top: 2px; gap: 2px; }
+  .tag { font-size: 0.58rem; padding: 1px 3px; }
+  .sidebar {
+    padding: 12px 10px;
+  }
+}
+
+/* כותרת */
+.header {
+  grid-column: 1 / -1;
+  padding: 18px 22px;
+  background: linear-gradient(90deg,#0d8bd6,#14a96c);
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.header-main h1 {
+  font-size: 1.45rem;
+  margin: 0;
+  font-weight: 700;
+}
+.month-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.month-controls button {
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 0.9rem;
+}
+.month-label {
+  padding: 5px 12px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 999px;
+  font-weight: 600;
+  min-width: 110px;
+  text-align: center;
+}
+
+/* גוף הלוח */
+.main {
+  padding: 16px;
+  background: #121416;
+  overflow-y: auto;
+}
+.calendar-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.calendar-grid th {
+  padding: 10px 0;
+  font-size: 0.8rem;
+  color: #86cfff;
+  border-bottom: 1px solid #2a3037;
+}
+.calendar-grid td {
+  border: 1px solid #1d2127;
+  padding: 6px;
+  vertical-align: top;
+  cursor: pointer;
+  background: #171a1f;
+  transition: 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.calendar-grid td.selected {
+  background: #1c2730;
+  box-shadow: inset 0 0 0 2px #14a96c;
+}
+.calendar-grid td.today {
+  border: 2px solid #14a96c;
+}
+.calendar-grid td.other-month {
+  background: #131519;
+  color: #4a525e;
+  pointer-events: none;
+}
+.calendar-grid td.shabbat {
+  background: #211a24;
+}
+
+/* תוכן התא – סידור אנכי */
+.date-top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-bottom: 2px;
+  line-height: 1.1;
+}
+.greg-day {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e8f8ff;
+  align-self: flex-end;
+}
+.heb-day {
+  font-size: 0.75rem;
+  color: #7fe8b5;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+/* תגיות */
+.tags {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-content: flex-start;
+}
+.tag {
+  font-size: 0.65rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: #1d2b34;
+  color: #8ccaff;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+.tag.holiday {
+  background: #173c26;
+  color: #66f5a3;
+}
+.tag.note {
+  background: #20314a;
+  color: #b7d4ff;
+}
+.tag:empty {
+  display: none !important;
+}
+
+/* סרגל צד */
+.sidebar {
+  padding: 18px 20px;
+  background: #15171b;
+  border-left: 1px solid #242830;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+.sidebar-section-title {
+  font-size: 0.9rem;
+  color: #b5e2ff;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* קופסאות מידע */
+.info-box {
+  background: #0f1114;
+  border-radius: 10px;
+  border: 1px solid #2b323a;
+  padding: 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #d7efff;
+}
+.highlight-time {
+  color: #66f5a3;
+  font-weight: bold;
+  font-size: 1.05rem;
+  display: block;
+  margin-top: 2px;
+}
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #0d8bd630;
+  color: #d1eaff;
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+/* פתקים – כפתור + ועורך */
+.note-add-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.fab-note {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: #111827;
+  font-size: 1.8rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+.fab-label {
+  font-size: 0.85rem;
+  color: #d1d5db;
+}
+.note-editor {
+  margin-bottom: 8px;
+}
+.note-area {
+  width: 100%;
+  min-height: 70px;
+  background: #0f1114;
+  border-radius: 8px;
+  border: 1px solid #2b323a;
+  padding: 10px;
+  color: #ecf6ff;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+.primary-btn {
+  border: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(135deg,#0d8bd6,#14a96c);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.secondary-btn {
+  border: none;
+  padding: 8px 10px;
+  margin-right: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #252935;
+  color: #e5e7eb;
+  font-size: 0.8rem;
+}
+
+/* רשימת פתקים */
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.event-item {
+  background: #0f1114;
+  border: 1px solid #2b323a;
+  padding: 10px;
+  border-radius: 8px;
+  color: #d7efff;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  word-break: break-word;
+}
+.event-item:empty {
+  display: none;
+}
+.note-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.edit-btn {
+  background: rgba(148, 163, 184, 0.15);
+  border: none;
+  color: #e5e7eb;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.delete-btn {
+  background: rgba(255, 107, 107, 0.1);
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <div class="header-main">
+      <h1>לוח שנה - יבנאל</h1>
+      <div class="month-controls">
+        <button id="prevMonthBtn">◀</button>
+        <div class="month-label" id="monthLabel"></div>
+        <button id="nextMonthBtn">▶</button>
+        <button id="todayBtn">היום</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <table class="calendar-grid">
+      <thead>
+        <tr><th>א'</th><th>ב'</th><th>ג'</th><th>ד'</th><th>ה'</th><th>ו'</th><th>שבת</th></tr>
+      </thead>
+      <tbody id="calendarBody"></tbody>
+    </table>
+  </main>
+
+  <aside class="sidebar">
+    <div>
+      <div class="sidebar-section-title">זמני שבת (לשבוע המוצג)</div>
+      <div class="info-box" id="shabbatTimesBox">
+        טוען נתונים...
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">יום נבחר</div>
+      <div id="selectedDateLabel" style="color:#dfeeff; font-size:0.95rem; margin-bottom:6px;"></div>
+      <div class="events-list" id="selectedDayEvents"></div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">הערות אישיות</div>
+      <div class="note-add-wrapper">
+        <button id="addNoteBtn" class="fab-note">+</button>
+        <div class="fab-label">פתק</div>
+      </div>
+      <div id="noteEditor" class="note-editor" style="display:none;">
+        <textarea id="noteArea" class="note-area" placeholder="כתוב כאן הערה..."></textarea>
+        <button class="primary-btn" id="saveNoteBtn">שמור</button>
+        <button class="secondary-btn" id="cancelNoteBtn">בטל</button>
+      </div>
+      <div class="events-list" id="notesList" style="margin-top:10px;"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// --- משתנים ---
+const calendarBody = document.getElementById("calendarBody");
+const monthLabel = document.getElementById("monthLabel");
+const selectedDateLabel = document.getElementById("selectedDateLabel");
+const selectedDayEvents = document.getElementById("selectedDayEvents");
+const noteArea = document.getElementById("noteArea");
+const notesList = document.getElementById("notesList");
+const shabbatTimesBox = document.getElementById("shabbatTimesBox");
+const addNoteBtn = document.getElementById("addNoteBtn");
+const noteEditor = document.getElementById("noteEditor");
+const saveNoteBtn = document.getElementById("saveNoteBtn");
+const cancelNoteBtn = document.getElementById("cancelNoteBtn");
+
+let currentViewDate = new Date();
+let selectedDate = new Date();
+let monthDataCache = {};
+let editingIndex = null;
+
+const gregMonthNames = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+const hebFormatter = new Intl.DateTimeFormat("he-IL-u-ca-hebrew",{day:"numeric",month:"short"});
+const fullDateFormatter = new Intl.DateTimeFormat("he-IL", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+const timeFormatter = new Intl.DateTimeFormat("he-IL", {hour:"2-digit", minute:"2-digit", hour12:false});
+
+function pad(n){return n.toString().padStart(2,"0");}
+function getDateKey(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function getMonthKey(year, month){ return `${year}-${pad(month)}`; }
+
+// --- טעינת נתונים (Hebcal) ---
+async function fetchMonthData(year, month) {
+  const key = getMonthKey(year, month);
+  if(monthDataCache[key]) return monthDataCache[key];
+
+  const url = `https://www.hebcal.com/hebcal?cfg=json&v=1&year=${year}&month=${month}&geonameid=293322&c=on&maj=on&min=on&mod=on&nx=on&ss=on&mf=on&i=on`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    let processedData = {};
+
+    if(data.items) {
+      data.items.forEach(item => {
+        const dateKey = item.date.split("T")[0];
+        if(!processedData[dateKey]) processedData[dateKey] = [];
+        if(!item.title && !item.hebrew) return;
+
+        let label = item.hebrew || item.title;
+        let type = item.category;
+
+        processedData[dateKey].push({
+          title: label,
+          category: type,
+          rawTime: item.date
+        });
+      });
+    }
+    monthDataCache[key] = processedData;
+    return processedData;
+  } catch(e) {
+    return {};
+  }
+}
+
+// --- בדיקת פתקים לתאריך ---
+function hasNotesForDate(dateObj) {
+  const key = "notes-" + getDateKey(dateObj);
+  try {
+    const arr = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(arr) && arr.length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+// --- עזר: פורמט שעה מאירוע ---
+function formatEventTime(ev) {
+  if (!ev) return "";
+  if (ev.rawTime) {
+    const d = new Date(ev.rawTime);
+    if (!isNaN(d)) {
+      return timeFormatter.format(d);
+    }
+  }
+  const match = (ev.title || "").match(/\d{1,2}:\d{2}/);
+  return match ? match[0] : "";
+}
+
+// --- בניית הלוח ---
+async function renderCalendar() {
+  const year = currentViewDate.getFullYear();
+  const month = currentViewDate.getMonth() + 1;
+
+  monthLabel.textContent = gregMonthNames[month-1] + " " + year;
+  calendarBody.innerHTML = "";
+
+  const eventsMap = await fetchMonthData(year, month);
+
+  const firstDayOfMonth = new Date(year, month-1, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const startDayIndex = firstDayOfMonth.getDay();
+
+  let dayCounter = 1;
+
+  for(let r=0; r<6; r++) {
+    const tr = document.createElement("tr");
+    for(let c=0; c<7; c++) {
+      const td = document.createElement("td");
+
+      if((r === 0 && c < startDayIndex) || (dayCounter > daysInMonth)) {
+        td.classList.add("other-month");
+      } else {
+        const currentDayDate = new Date(year, month-1, dayCounter);
+        const dKey = getDateKey(currentDayDate);
+        const dayEvents = eventsMap[dKey] || [];
+
+        td.innerHTML = `
+          <div class="date-top">
+            <span class="greg-day">${dayCounter}</span>
+            <span class="heb-day">${hebFormatter.format(currentDayDate)}</span>
+          </div>
+        `;
+
+        let tagsHtml = `<div class="tags">`;
+        dayEvents.forEach(ev => {
+          if(ev.category === "holiday" || ev.category === "roshchodesh" || ev.category === "parashat") {
+             let displayTitle = ev.title;
+             if(ev.category === "parashat" && displayTitle.startsWith("Parashat ")) {
+               displayTitle = "פרשת " + displayTitle.replace("Parashat ","");
+             }
+             tagsHtml += `<span class="tag holiday">${displayTitle}</span>`;
+          }
+        });
+
+        if (hasNotesForDate(currentDayDate)) {
+          tagsHtml += `<span class="tag note">פתק</span>`;
+        }
+
+        tagsHtml += `</div>`;
+        td.innerHTML += tagsHtml;
+
+        if(c === 6) td.classList.add("shabbat");
+        if(getDateKey(new Date()) === dKey) td.classList.add("today");
+        if(getDateKey(selectedDate) === dKey) td.classList.add("selected");
+
+        const clickedDate = new Date(currentDayDate);
+        td.onclick = () => {
+          selectedDate = clickedDate;
+          renderCalendar();
+          updateSidebarInfo(eventsMap);
+        };
+
+        dayCounter++;
+      }
+      tr.appendChild(td);
+    }
+    calendarBody.appendChild(tr);
+    if(dayCounter > daysInMonth && r >= 4) break;
+  }
+
+  updateSidebarInfo(eventsMap);
+}
+
+// --- עדכון סרגל צד ---
+function updateSidebarInfo(eventsMap) {
+  selectedDateLabel.textContent = fullDateFormatter.format(selectedDate);
+
+  const dKey = getDateKey(selectedDate);
+  const dayEvents = eventsMap[dKey] || [];
+  selectedDayEvents.innerHTML = "";
+
+  if(dayEvents.length === 0) {
+    selectedDayEvents.innerHTML = `<div style="color:#777; font-size:0.8rem">אין אירועים מיוחדים ביום זה</div>`;
+  } else {
+    dayEvents.forEach(ev => {
+      if(ev.category !== "candles" && ev.category !== "havdalah") {
+        const div = document.createElement("div");
+        div.className = "event-item";
+        div.textContent = ev.title;
+        selectedDayEvents.appendChild(div);
+      }
+    });
+  }
+
+  const dayOfWeek = selectedDate.getDay();
+  const distToFriday = 5 - dayOfWeek;
+  const distToShabbat = 6 - dayOfWeek;
+
+  const fridayDate = new Date(selectedDate);
+  fridayDate.setDate(selectedDate.getDate() + distToFriday);
+
+  const shabbatDate = new Date(selectedDate);
+  shabbatDate.setDate(selectedDate.getDate() + distToShabbat);
+
+  const friKey = getDateKey(fridayDate);
+  const satKey = getDateKey(shabbatDate);
+  const friEvents = eventsMap[friKey] || [];
+  const satEvents = eventsMap[satKey] || [];
+
+  const candles = friEvents.find(e => e.category === "candles");
+  const havdalah = satEvents.find(e => e.category === "havdalah");
+  const parasha = satEvents.find(e => e.category === "parashat") || friEvents.find(e => e.category === "parashat");
+
+  let html = `<div class="badge">יבנאל</div>`;
+
+  if(parasha) {
+    html += `<div>פרשה: <strong>${parasha.title.replace("Parashat ","")}</strong></div>`;
+    html += `<hr style="border:0; border-top:1px solid #2b323a; margin:8px 0;">`;
+  }
+
+  if(candles) {
+    const time = formatEventTime(candles);
+    html += `<div>כניסת שבת (${hebFormatter.format(fridayDate)}):</div>`;
+    html += `<span class="highlight-time">${time}</span><br>`;
+  } else {
+     html += `<div style="color:#777; font-size:0.8rem">אין נתונים לשישי זה בחודש הנוכחי</div>`;
+  }
+
+  if(havdalah) {
+    const time = formatEventTime(havdalah);
+    html += `<div>צאת שבת (${hebFormatter.format(shabbatDate)}):</div>`;
+    html += `<span class="highlight-time">${time}</span>`;
+  }
+
+  shabbatTimesBox.innerHTML = html;
+  loadNotes();
+}
+
+// --- פתקים ---
+function loadNotes() {
+  const key = "notes-" + getDateKey(selectedDate);
+  const notes = JSON.parse(localStorage.getItem(key) || "[]");
+
+  notesList.innerHTML = "";
+  if(notes.length === 0) return;
+
+  notes.forEach((noteText, index) => {
+    if(!noteText) return;
+    const div = document.createElement("div");
+    div.className = "event-item";
+    div.innerHTML = `
+      <span class="note-text">${noteText}</span>
+      <div class="note-actions">
+        <button class="edit-btn" onclick="editNote(${index})">ערוך</button>
+        <button class="delete-btn" onclick="deleteNote(${index})">✕</button>
+      </div>
+    `;
+    notesList.appendChild(div);
+  });
+}
+
+window.deleteNote = function(index) {
+  const key = "notes-" + getDateKey(selectedDate);
+  let notes = JSON.parse(localStorage.getItem(key) || "[]");
+  notes.splice(index, 1);
+  localStorage.setItem(key, JSON.stringify(notes));
+  if (editingIndex === index) {
+    editingIndex = null;
+    noteEditor.style.display = "none";
+    noteArea.value = "";
+  }
+  loadNotes();
+  renderCalendar();
+};
+
+window.editNote = function(index) {
+  const key = "notes-" + getDateKey(selectedDate);
+  const notes = JSON.parse(localStorage.getItem(key) || "[]");
+  editingIndex = index;
+  noteArea.value = notes[index] || "";
+  noteEditor.style.display = "block";
+  noteArea.focus();
+};
+
+addNoteBtn.onclick = () => {
+  editingIndex = null;
+  noteArea.value = "";
+  noteEditor.style.display = "block";
+  noteArea.focus();
+};
+
+cancelNoteBtn.onclick = () => {
+  editingIndex = null;
+  noteArea.value = "";
+  noteEditor.style.display = "none";
+};
+
+saveNoteBtn.onclick = () => {
+  const txt = noteArea.value.trim();
+  if(!txt) return;
+  const key = "notes-" + getDateKey(selectedDate);
+  let notes = JSON.parse(localStorage.getItem(key) || "[]");
+  if (editingIndex === null) {
+    notes.push(txt);
+  } else {
+    notes[editingIndex] = txt;
+  }
+  localStorage.setItem(key, JSON.stringify(notes));
+  editingIndex = null;
+  noteArea.value = "";
+  noteEditor.style.display = "none";
+  loadNotes();
+  renderCalendar();
+};
+
+// --- ניווט ---
+document.getElementById("prevMonthBtn").onclick = () => {
+  currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+  renderCalendar();
+};
+document.getElementById("nextMonthBtn").onclick = () => {
+  currentViewDate.setMonth(currentViewDate.getMonth() + 1);
+  renderCalendar();
+};
+document.getElementById("todayBtn").onclick = () => {
+  currentViewDate = new Date();
+  selectedDate = new Date();
+  renderCalendar();
+};
+
+renderCalendar();
+</script>
+</body>
+</html>
